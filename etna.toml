@@ -1,0 +1,86 @@
+# ETNA workload index for bstr.
+#
+# One [[variant]] per injected mutation. Source of truth for variant->property
+# mapping. Every other fact is derivable from the source tree:
+#   - ls patches/*.patch               (patch-based variants)
+#   - grep -rn "pub fn property_" src/etna.rs
+#   - grep -rn "fn witness_.*_case_" tests/etna_witnesses.rs
+#
+# Base commit for this workload is HEAD of etna-base on this tree. Every
+# etna/<variant> branch is etna-base + exactly one patch applied on top.
+
+[[variant]]
+name = "splitn_trailing_empty_aed424a_1"
+property = "splitn_bounded"
+injection = "patch"
+patch = "patches/splitn_trailing_empty_aed424a_1.patch"
+source_commit = "aed424a778f43373824232e242e4f7894ba221f1"
+witnesses = [
+    "witness_splitn_bounded_case_no_needle_in_haystack",
+    "witness_splitn_bounded_case_needle_once_extra_limit",
+]
+frameworks = ["proptest", "quickcheck", "crabcheck", "hegel"]
+files = ["src/ext_slice.rs"]
+
+[[variant]]
+name = "cow_partialeq_self_compare_b2111b6_1"
+property = "cow_partialeq_bstr"
+injection = "patch"
+patch = "patches/cow_partialeq_self_compare_b2111b6_1.patch"
+source_commit = "b2111b6bbf2c9a819fb1338aa81bd099874106a1"
+witnesses = [
+    "witness_cow_partialeq_bstr_case_distinct_bytes",
+    "witness_cow_partialeq_bstr_case_distinct_lengths",
+]
+frameworks = ["proptest", "quickcheck", "crabcheck", "hegel"]
+files = ["src/impls.rs"]
+
+[[variant]]
+name = "debug_fffd_not_escaped_eafb495_1"
+property = "debug_valid_fffd_preserved"
+injection = "patch"
+patch = "patches/debug_fffd_not_escaped_eafb495_1.patch"
+source_commit = "eafb4951c651c4b4eab94621c259f80b217803ee"
+witnesses = [
+    "witness_debug_valid_fffd_preserved_case_bare",
+    "witness_debug_valid_fffd_preserved_case_sandwiched",
+]
+frameworks = ["proptest", "quickcheck", "crabcheck", "hegel"]
+files = ["src/impls.rs"]
+
+[[variant]]
+name = "debug_non_ascii_control_unicode_escape_8e2041e_1"
+property = "debug_ascii_control_hex"
+injection = "patch"
+patch = "patches/debug_non_ascii_control_unicode_escape_8e2041e_1.patch"
+source_commit = "8e2041ed5481078f25635dd7989a96abd87721ce"
+witnesses = [
+    "witness_debug_ascii_control_hex_case_low_stx",
+]
+frameworks = ["proptest", "quickcheck", "crabcheck", "hegel"]
+files = ["src/impls.rs"]
+
+[[variant]]
+name = "debug_control_chars_x1a_732fc99_1"
+property = "debug_ascii_control_hex"
+injection = "patch"
+patch = "patches/debug_control_chars_x1a_732fc99_1.patch"
+source_commit = "732fc99f3844d88dc40f33d95a7bc8f3f6bd2e5b"
+witnesses = [
+    "witness_debug_ascii_control_hex_case_high_fs",
+]
+frameworks = ["proptest", "quickcheck", "crabcheck", "hegel"]
+files = ["src/impls.rs"]
+
+[[variant]]
+name = "debug_hex_uppercase_af99a6e_1"
+property = "debug_hex_lowercase"
+injection = "patch"
+patch = "patches/debug_hex_uppercase_af99a6e_1.patch"
+source_commit = "af99a6ecb4723d0ea03982797a1becd8437d3f7d"
+witnesses = [
+    "witness_debug_hex_lowercase_case_ff",
+    "witness_debug_hex_lowercase_case_ed",
+]
+frameworks = ["proptest", "quickcheck", "crabcheck", "hegel"]
+files = ["src/impls.rs"]
