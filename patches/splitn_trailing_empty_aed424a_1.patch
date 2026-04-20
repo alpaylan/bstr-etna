@@ -1,0 +1,22 @@
+diff --git a/src/ext_slice.rs b/src/ext_slice.rs
+index f413a85..95d5ccc 100644
+--- a/src/ext_slice.rs
++++ b/src/ext_slice.rs
+@@ -3579,7 +3579,7 @@ impl<'h, 's> Iterator for SplitN<'h, 's> {
+     #[inline]
+     fn next(&mut self) -> Option<&'h [u8]> {
+         self.count += 1;
+-        if self.count > self.limit || self.split.done {
++        if self.count > self.limit {
+             None
+         } else if self.count == self.limit {
+             Some(&self.split.finder.haystack[self.split.last..])
+@@ -3618,7 +3618,7 @@ impl<'h, 's> Iterator for SplitNReverse<'h, 's> {
+     #[inline]
+     fn next(&mut self) -> Option<&'h [u8]> {
+         self.count += 1;
+-        if self.count > self.limit || self.split.done {
++        if self.count > self.limit {
+             None
+         } else if self.count == self.limit {
+             Some(&self.split.finder.haystack()[..self.split.last])
