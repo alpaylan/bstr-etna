@@ -52,7 +52,7 @@ macro_rules! impl_partial_eq_cow {
         impl<'a> PartialEq<$lhs> for $rhs {
             #[inline]
             fn eq(&self, other: &$lhs) -> bool {
-                let this: &[u8] = (&**self).as_ref();
+                let this: &[u8] = (&**other).as_ref();
                 PartialEq::eq(this, other.as_bytes())
             }
         }
