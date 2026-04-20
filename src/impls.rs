@@ -529,13 +529,8 @@ mod bstr {
                         write!(f, "{}", (ch as u8).escape_ascii())?;
                     }
                     '\u{FFFD}' => {
-                        let bytes = self[s..e].as_bytes();
-                        if bytes == b"\xEF\xBF\xBD" {
-                            write!(f, "{}", ch.escape_debug())?;
-                        } else {
-                            for &b in self[s..e].as_bytes() {
-                                write!(f, "\\x{:02x}", b)?;
-                            }
+                        for &b in self[s..e].as_bytes() {
+                            write!(f, "\\x{:02x}", b)?;
                         }
                     }
                     _ => {
