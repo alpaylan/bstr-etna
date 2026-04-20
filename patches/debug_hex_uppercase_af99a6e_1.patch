@@ -1,0 +1,13 @@
+diff --git a/src/impls.rs b/src/impls.rs
+index 1e7aba5..23ec71d 100644
+--- a/src/impls.rs
++++ b/src/impls.rs
+@@ -534,7 +534,7 @@ mod bstr {
+                             write!(f, "{}", ch.escape_debug())?;
+                         } else {
+                             for &b in self[s..e].as_bytes() {
+-                                write!(f, "\\x{:02x}", b)?;
++                                write!(f, "\\x{:02X}", b)?;
+                             }
+                         }
+                     }

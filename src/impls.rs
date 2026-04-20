@@ -534,7 +534,7 @@ mod bstr {
                             write!(f, "{}", ch.escape_debug())?;
                         } else {
                             for &b in self[s..e].as_bytes() {
-                                write!(f, "\\x{:02x}", b)?;
+                                write!(f, "\\x{:02X}", b)?;
                             }
                         }
                     }
