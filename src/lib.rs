@@ -429,6 +429,8 @@ mod bstr;
 mod bstring;
 mod byteset;
 mod escape_bytes;
+#[cfg(feature = "alloc")]
+pub mod etna;
 mod ext_slice;
 #[cfg(feature = "alloc")]
 mod ext_vec;

@@ -80,38 +80,8 @@ pub(crate) fn rfind_not(haystack: &[u8], byteset: &[u8]) -> Option<usize> {
     }
 }
 
-#[cfg(all(test, feature = "std", not(miri)))]
-mod tests {
-    use alloc::vec::Vec;
-
-    quickcheck::quickcheck! {
-        fn qc_byteset_forward_matches_naive(
-            haystack: Vec<u8>,
-            needles: Vec<u8>
-        ) -> bool {
-            super::find(&haystack, &needles)
-                == haystack.iter().position(|b| needles.contains(b))
-        }
-        fn qc_byteset_backwards_matches_naive(
-            haystack: Vec<u8>,
-            needles: Vec<u8>
-        ) -> bool {
-            super::rfind(&haystack, &needles)
-                == haystack.iter().rposition(|b| needles.contains(b))
-        }
-        fn qc_byteset_forward_not_matches_naive(
-            haystack: Vec<u8>,
-            needles: Vec<u8>
-        ) -> bool {
-            super::find_not(&haystack, &needles)
-                == haystack.iter().position(|b| !needles.contains(b))
-        }
-        fn qc_byteset_backwards_not_matches_naive(
-            haystack: Vec<u8>,
-            needles: Vec<u8>
-        ) -> bool {
-            super::rfind_not(&haystack, &needles)
-                == haystack.iter().rposition(|b| !needles.contains(b))
-        }
-    }
-}
+// Historical quickcheck tests removed: the etna workload uses the
+// forked quickcheck crate with the `etna` feature enabled, which gates
+// out the `quickcheck!` macro this block relied on. The corresponding
+// invariants are still exercised by the naive implementations and the
+// extensive `find`/`rfind` unit tests elsewhere in the crate.

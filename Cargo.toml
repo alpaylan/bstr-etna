@@ -31,6 +31,11 @@ serde = ["dep:serde"]
 [dependencies]
 memchr = { version = "2.7.1", default-features = false }
 serde = { version = "1.0.85", default-features = false, optional = true }
+proptest = "1.5"
+quickcheck = { path = "/Users/akeles/Programming/projects/PbtBenchmark/quickcheck", features = ["etna"] }
+crabcheck = { path = "/Users/akeles/Programming/projects/PbtBenchmark/crabcheck" }
+hegeltest = "0.3.7"
+rand = "0.9"
 
 [dependencies.regex-automata]
 version = "0.4.1"
@@ -39,9 +44,12 @@ features = ["dfa-search"]
 optional = true
 
 [dev-dependencies]
-quickcheck = { version = "1", default-features = false }
 ucd-parse = "0.1.3"
 unicode-segmentation = "1.2.1"
+
+[[bin]]
+name = "etna"
+path = "src/bin/etna.rs"
 
 [package.metadata.docs.rs]
 # We want to document all features.
