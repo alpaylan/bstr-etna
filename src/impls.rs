@@ -525,7 +525,11 @@ mod bstr {
             for (s, e, ch) in self.char_indices() {
                 match ch {
                     '\0' => write!(f, "\\0")?,
-                    '\x01'..='\x7f' => {
+                    '\x01'..='\x08'
+                    | '\x0b'
+                    | '\x0c'
+                    | '\x0e'..='\x19'
+                    | '\x7f' => {
                         write!(f, "{}", (ch as u8).escape_ascii())?;
                     }
                     '\u{FFFD}' => {
