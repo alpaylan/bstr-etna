@@ -9,6 +9,9 @@
 # Base commit for this workload is HEAD of etna-base on this tree. Every
 # etna/<variant> branch is etna-base + exactly one patch applied on top.
 
+name = "bstr"
+language = "Rust"
+
 [[variant]]
 name = "splitn_trailing_empty_aed424a_1"
 property = "splitn_bounded"
