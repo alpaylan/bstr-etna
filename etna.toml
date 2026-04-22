@@ -1,89 +1,172 @@
-# ETNA workload index for bstr.
-#
-# One [[variant]] per injected mutation. Source of truth for variant->property
-# mapping. Every other fact is derivable from the source tree:
-#   - ls patches/*.patch               (patch-based variants)
-#   - grep -rn "pub fn property_" src/etna.rs
-#   - grep -rn "fn witness_.*_case_" tests/etna_witnesses.rs
-#
-# Base commit for this workload is HEAD of etna-base on this tree. Every
-# etna/<variant> branch is etna-base + exactly one patch applied on top.
-
 name = "bstr"
-language = "Rust"
+language = "rust"
+crate = "bstr"
+base_commit = "2ec9a221f5073c7ecd84f878db283b40f253e5fa"
 
-[[variant]]
-name = "splitn_trailing_empty_aed424a_1"
-property = "splitn_bounded"
-injection = "patch"
-patch = "patches/splitn_trailing_empty_aed424a_1.patch"
-source_commit = "aed424a778f43373824232e242e4f7894ba221f1"
-witnesses = [
-    "witness_splitn_bounded_case_no_needle_in_haystack",
-    "witness_splitn_bounded_case_needle_once_extra_limit",
-]
-frameworks = ["proptest", "quickcheck", "crabcheck", "hegel"]
+[[tasks]]
+mutations = ["splitn_trailing_empty_aed424a_1"]
+
+[tasks.source]
+repo = "https://github.com/BurntSushi/bstr"
+commits = ["aed424a778f43373824232e242e4f7894ba221f1"]
+commit_subjects = ["api: fix splitn_str and rsplitn_str"]
+summary = "`SplitN::next` short-circuited on `count == limit` without checking whether the underlying split had already produced its final chunk, so `splitn_str(n, needle)` emitted a spurious trailing empty slice whenever the haystack contained fewer than `n-1` needle occurrences. The fix gates the early return on `self.split.done` as well."
+
+[tasks.injection]
+kind = "patch"
 files = ["src/ext_slice.rs"]
+locations = [{ file = "src/ext_slice.rs" }]
+patch = "patches/splitn_trailing_empty_aed424a_1.patch"
 
-[[variant]]
-name = "cow_partialeq_self_compare_b2111b6_1"
-property = "cow_partialeq_bstr"
-injection = "patch"
+[tasks.bug]
+short_name = "splitn_trailing_empty"
+invariant = "`haystack.splitn_str(n, needle).count() == min(n, haystack.split_str(needle).count())` (and the same for `rsplitn_str`)."
+how_triggered = """
+The fix adds `|| self.split.done` to the `count == limit` short-circuit so the splitn iterator stops emitting once the underlying split is exhausted. The buggy version still returns `haystack[haystack.len()..]` (an empty slice) as a spurious trailing element when the limit exceeds the number of matches — so `splitn_str(2, ":")` on `b"ab"` yields `["ab", ""]` instead of `["ab"]`.
+"""
+
+[[tasks.tasks]]
+property = "SplitnBounded"
+witnesses = [
+  { test_fn = "witness_splitn_bounded_case_no_needle_in_haystack" },
+  { test_fn = "witness_splitn_bounded_case_needle_once_extra_limit" },
+]
+
+[[tasks]]
+mutations = ["cow_partialeq_self_compare_b2111b6_1"]
+
+[tasks.source]
+repo = "https://github.com/BurntSushi/bstr"
+commits = ["b2111b6bbf2c9a819fb1338aa81bd099874106a1"]
+commit_subjects = ["impl: fix cow partialeq impl"]
+summary = "One arm of the `impl_partial_eq_cow!` macro compared the right-hand operand with itself instead of with the left, so `cow == &bstr` (and the mirrored direction) returned `true` for every pair. The fix swaps the wrong argument for `this` so both directions actually compare against the caller's bytes."
+
+[tasks.injection]
+kind = "patch"
+files = ["src/impls.rs"]
+locations = [{ file = "src/impls.rs" }]
 patch = "patches/cow_partialeq_self_compare_b2111b6_1.patch"
-source_commit = "b2111b6bbf2c9a819fb1338aa81bd099874106a1"
-witnesses = [
-    "witness_cow_partialeq_bstr_case_distinct_bytes",
-    "witness_cow_partialeq_bstr_case_distinct_lengths",
-]
-frameworks = ["proptest", "quickcheck", "crabcheck", "hegel"]
-files = ["src/impls.rs"]
 
-[[variant]]
-name = "debug_fffd_not_escaped_eafb495_1"
-property = "debug_valid_fffd_preserved"
-injection = "patch"
+[tasks.bug]
+short_name = "cow_partialeq_self_compare"
+invariant = "`&BStr == Cow<BStr>` and `Cow<BStr> == &BStr` must both agree with underlying byte equality, in both directions."
+how_triggered = "The buggy second impl of the macro expanded to `PartialEq::eq(this, other.as_bytes())` against the wrong operand, effectively comparing `other` with itself. So `cow == &bstr` would always return `true` regardless of content. The witness compares distinct byte strings and expects `false` via either direction of the macro-generated `impl`s."
+
+[[tasks.tasks]]
+property = "CowPartialeqBstr"
+witnesses = [
+  { test_fn = "witness_cow_partialeq_bstr_case_distinct_bytes" },
+  { test_fn = "witness_cow_partialeq_bstr_case_distinct_lengths" },
+]
+
+[[tasks]]
+mutations = ["debug_fffd_not_escaped_eafb495_1"]
+
+[tasks.source]
+repo = "https://github.com/BurntSushi/bstr"
+commits = ["eafb4951c651c4b4eab94621c259f80b217803ee"]
+commit_subjects = ["impl: fix replacement codepoint handling in Debug impl"]
+summary = "`Debug for BStr` unconditionally rewrote the three bytes of a well-formed U+FFFD (`0xEF 0xBF 0xBD`) as `\\xef\\xbf\\xbd`, erasing valid replacement characters from the output. The fix special-cases the exact byte sequence and renders it via `ch.escape_debug()` so the codepoint survives verbatim."
+
+[tasks.injection]
+kind = "patch"
+files = ["src/impls.rs"]
+locations = [{ file = "src/impls.rs" }]
 patch = "patches/debug_fffd_not_escaped_eafb495_1.patch"
-source_commit = "eafb4951c651c4b4eab94621c259f80b217803ee"
-witnesses = [
-    "witness_debug_valid_fffd_preserved_case_bare",
-    "witness_debug_valid_fffd_preserved_case_sandwiched",
-]
-frameworks = ["proptest", "quickcheck", "crabcheck", "hegel"]
-files = ["src/impls.rs"]
 
-[[variant]]
-name = "debug_non_ascii_control_unicode_escape_8e2041e_1"
-property = "debug_ascii_control_hex"
-injection = "patch"
+[tasks.bug]
+short_name = "debug_fffd_not_escaped"
+invariant = "Debug output of a `BStr` containing the valid UTF-8 encoding of `U+FFFD` (`0xEF 0xBF 0xBD`) must render the literal replacement character, not three `\\xNN` escapes."
+how_triggered = """
+The fix checks `if bytes == b"\\xEF\\xBF\\xBD"` and, when true, renders `ch.escape_debug()` so the character survives verbatim. The buggy code unconditionally rewrites the three FFFD bytes as `\\xef\\xbf\\xbd`, so a well-formed FFFD in the input never appears literally in the output.
+"""
+
+[[tasks.tasks]]
+property = "DebugValidFffdPreserved"
+witnesses = [
+  { test_fn = "witness_debug_valid_fffd_preserved_case_bare" },
+  { test_fn = "witness_debug_valid_fffd_preserved_case_sandwiched" },
+]
+
+[[tasks]]
+mutations = ["debug_non_ascii_control_unicode_escape_8e2041e_1"]
+
+[tasks.source]
+repo = "https://github.com/BurntSushi/bstr"
+commits = ["8e2041ed5481078f25635dd7989a96abd87721ce"]
+commit_subjects = ["impl: improve Debug impl for BStr"]
+summary = "Prior to this commit, `Debug for BStr` only special-cased `U+FFFD` and delegated everything else to `ch.escape_debug()`, which renders ASCII control bytes as `\\u{NN}` instead of the shorter `\\xNN`. The fix introduces dedicated arms for `\\0`, `\\x01..=\\x7f`, and the FFFD case so control bytes use the hex-escape form."
+
+[tasks.injection]
+kind = "patch"
+files = ["src/impls.rs"]
+locations = [{ file = "src/impls.rs" }]
 patch = "patches/debug_non_ascii_control_unicode_escape_8e2041e_1.patch"
-source_commit = "8e2041ed5481078f25635dd7989a96abd87721ce"
-witnesses = [
-    "witness_debug_ascii_control_hex_case_low_stx",
-]
-frameworks = ["proptest", "quickcheck", "crabcheck", "hegel"]
-files = ["src/impls.rs"]
 
-[[variant]]
-name = "debug_control_chars_x1a_732fc99_1"
-property = "debug_ascii_control_hex"
-injection = "patch"
+[tasks.bug]
+short_name = "debug_non_ascii_control_unicode_escape"
+invariant = "Debug output of any ASCII control byte (0x01..=0x1f or 0x7f, excluding `\\0`, `\\t`, `\\n`, `\\r`) must use `\\xNN` escapes."
+how_triggered = """
+The fix introduces per-byte arms (`'\\0' => "\\\\0"`, `'\\x01'..='\\x7f' => escape_ascii()`, `'\\u{FFFD}' => ...`). The pre-8e2041e buggy code only special-cased FFFD and fell through to `ch.escape_debug()` for everything else, so byte 0x02 prints as `\\u{2}` instead of `\\x02`.
+"""
+
+[[tasks.tasks]]
+property = "DebugAsciiControlHex"
+witnesses = [
+  { test_fn = "witness_debug_ascii_control_hex_case_low_stx" },
+]
+
+[[tasks]]
+mutations = ["debug_control_chars_x1a_732fc99_1"]
+
+[tasks.source]
+repo = "https://github.com/BurntSushi/bstr"
+commits = ["732fc99f3844d88dc40f33d95a7bc8f3f6bd2e5b"]
+commit_subjects = ["impl: fix formatting of control characters \\\\x1a through \\\\x1f in Debug impl"]
+summary = "Following 8e2041e, the ASCII-control escape arm in `Debug for BStr` was written as two disjoint ranges `0x01..=0x19` and `0x20..=0x7f`, accidentally omitting `0x1a..=0x1f`. Those bytes fell through to `escape_debug` and printed as `\\u{1a}..\\u{1f}`. The fix merges the ranges into `'\\x01'..='\\x7f'`."
+
+[tasks.injection]
+kind = "patch"
+files = ["src/impls.rs"]
+locations = [{ file = "src/impls.rs" }]
 patch = "patches/debug_control_chars_x1a_732fc99_1.patch"
-source_commit = "732fc99f3844d88dc40f33d95a7bc8f3f6bd2e5b"
-witnesses = [
-    "witness_debug_ascii_control_hex_case_high_fs",
-]
-frameworks = ["proptest", "quickcheck", "crabcheck", "hegel"]
-files = ["src/impls.rs"]
 
-[[variant]]
-name = "debug_hex_uppercase_af99a6e_1"
-property = "debug_hex_lowercase"
-injection = "patch"
-patch = "patches/debug_hex_uppercase_af99a6e_1.patch"
-source_commit = "af99a6ecb4723d0ea03982797a1becd8437d3f7d"
+[tasks.bug]
+short_name = "debug_control_chars_x1a"
+invariant = "Same as variant 4, for the 0x1a..=0x1f subrange."
+how_triggered = "After 8e2041e the escape branch covered `0x01..=0x19` and `0x20..=0x7f` but omitted `0x1a..=0x1f` (a Rust range subtlety around `SUB` / `ESC` / `FS`..`US`); those bytes still fell through to `escape_debug` and printed `\\u{1a}..\\u{1f}` instead of `\\x1a..\\x1f`. The 732fc99 fix extends the range to `'\\x01'..='\\x7f'`. The mutation narrows it back."
+
+[[tasks.tasks]]
+property = "DebugAsciiControlHex"
 witnesses = [
-    "witness_debug_hex_lowercase_case_ff",
-    "witness_debug_hex_lowercase_case_ed",
+  { test_fn = "witness_debug_ascii_control_hex_case_high_fs" },
 ]
-frameworks = ["proptest", "quickcheck", "crabcheck", "hegel"]
+
+[[tasks]]
+mutations = ["debug_hex_uppercase_af99a6e_1"]
+
+[tasks.source]
+repo = "https://github.com/BurntSushi/bstr"
+commits = ["af99a6ecb4723d0ea03982797a1becd8437d3f7d"]
+commit_subjects = ["impl: fix discrepancy in upper/lower case in `impl fmt::Debug for BStr`"]
+summary = "The invalid-UTF-8 branch of `Debug for BStr` formatted each byte with `{:02X}` (uppercase), diverging from the lowercase hex the rest of the impl (and the analogous `str` debug output) uses. The fix is a one-character change to `{:02x}`."
+
+[tasks.injection]
+kind = "patch"
 files = ["src/impls.rs"]
+locations = [{ file = "src/impls.rs" }]
+patch = "patches/debug_hex_uppercase_af99a6e_1.patch"
+
+[tasks.bug]
+short_name = "debug_hex_uppercase"
+invariant = "Invalid UTF-8 bytes rendered through the FFFD-else branch must use lowercase hex in the `\\xNN` escape."
+how_triggered = """
+The pre-af99a6e code wrote `write!(f, "\\\\x{:02X}", b)?` (uppercase). The fix is the one-character change to `{:02x}`. The witness formats byte `0xff` and asserts the rendering is `"\\xff"`, not `"\\xFF"`.
+"""
+
+[[tasks.tasks]]
+property = "DebugHexLowercase"
+witnesses = [
+  { test_fn = "witness_debug_hex_lowercase_case_ff" },
+  { test_fn = "witness_debug_hex_lowercase_case_ed" },
+]
