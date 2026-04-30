@@ -1,5 +1,6 @@
 name = "bstr"
 language = "rust"
+strategies = ["proptest", "quickcheck", "crabcheck", "hegel"]
 crate = "bstr"
 base_commit = "2ec9a221f5073c7ecd84f878db283b40f253e5fa"
 
