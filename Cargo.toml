@@ -51,6 +51,10 @@ unicode-segmentation = "1.2.1"
 name = "etna"
 path = "src/bin/etna.rs"
 
+[[bin]]
+name = "etna-faultloc"
+path = "src/bin/etna-faultloc.rs"
+
 [package.metadata.docs.rs]
 # We want to document all features.
 all-features = true
